@@ -8,7 +8,6 @@ import socket
 import sys
 import urequests
 import micropython
-import ntptime
 from dht import DHT22
 from config import settings
 import rp2
