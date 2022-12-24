@@ -2,9 +2,10 @@
 
 ## Overview
 piclock is an alarm clock written in Micropython for Raspberry Pi Pico WH.
+Video on [Youtube](https://youtu.be/pl6CCcmThhM)
 
 ## Software Prerequisites
- - MAX7219 driver from https://github.com/mcauser/micropython-max7219
+ - [MAX7219 driver from mcauser on github](https://github.com/mcauser/micropython-max7219)
 
 
 ## Features
