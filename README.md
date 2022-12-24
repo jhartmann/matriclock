@@ -4,11 +4,13 @@
 piclock is an alarm clock written in Micropython for Raspberry Pi Pico WH.
 Video on [Youtube](https://youtu.be/pl6CCcmThhM)
 
+
 ## Software Prerequisites
  - [MAX7219 driver from mcauser on github](https://github.com/mcauser/micropython-max7219)
 
 
 ## Features
+ - time synchronization via [worldtimeapi.org](https://worldtimeapi.org)
  - Alarm clock with an infinite number of alarm times
  - Alarm on/off
  - Snooze function
@@ -16,15 +18,17 @@ Video on [Youtube](https://youtu.be/pl6CCcmThhM)
  - Displaying temperature and humidity
  - Display off / standby mode
 
+
 ## Parts
-|Count|Part                                                              |
-|-----|------------------------------------------------------------------|
-|1    |Raspberry Pi Pico WH Microcontroller                              |
-|1    |8x32 LED Matrix Display MAX7219                                   |
-|3    |Buttons                                                           |
-|1    |DHT-22 Sensor                                                     |
-|4    |Resistors 10k (3 pull-up for the buttons, 1 for the DHT-22 sensor)|
-|1    |Piezo buzzer, active                                              |
+|Qantity|Part                                                              |
+|-------|------------------------------------------------------------------|
+|1      |Raspberry Pi Pico WH Microcontroller                              |
+|1      |8x32 LED Matrix Display MAX7219                                   |
+|3      |Buttons                                                           |
+|1      |DHT-22 Sensor                                                     |
+|4      |Resistors 10k (3 pull-up for the buttons, 1 for the DHT-22 sensor)|
+|1      |Piezo buzzer, active                                              |
+
 
 ## Pinout
 |Part       |Connection |RPi Pico |Connection|
