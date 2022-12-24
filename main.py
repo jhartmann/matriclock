@@ -685,7 +685,7 @@ class PiClock:  # **************************************************************
             t1 = temp // 10
             t0 = temp % 10
 
-            humidity = int(self.my_round(self._dht22.humidity()-30, 0))
+            humidity = int(self.my_round(self._dht22.humidity(), 0))
             if humidity > 99:
                 humidity = 99
                 
