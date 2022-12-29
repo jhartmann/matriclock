@@ -16,9 +16,10 @@ import rp2
 class Button:  # *****************************************************************************************************************
 
     def __init__(self, id, handler):
-        
+
         self.pin = Pin(id, Pin.IN)
-        self.pin.irq(trigger=machine.Pin.IRQ_RISING | machine.Pin.IRQ_FALLING, handler=handler)
+        self.pin.irq(trigger=machine.Pin.IRQ_RISING |
+                     machine.Pin.IRQ_FALLING, handler=handler)
         self._id = id
         self._debounce_time_ms = 200
         self._value_before = 0
@@ -28,7 +29,6 @@ class Button:  # ***************************************************************
         self._value_changed_time = 0
         self._value_changed_time_first = -1
         self.buttons_enabled = True
-
 
     def register_value(self):
         # call this at the beginning of the button callback function to let
@@ -50,7 +50,6 @@ class Button:  # ***************************************************************
     def get_id(self):
         return self._id
 
-
     def value_changed(self):
         return self._value_before != self._value
 
@@ -69,11 +68,11 @@ class AlarmHandler:  # *********************************************************
 
         self._alarm_next_rtcdt = None
         self._enabled = True
-        self._alarm_count = 0 
-        self._snooze_alarm_ticks_ms = 0 # Ticks when the snooze alarm is raised
-        
+        self._alarm_count = 0
+        self._snooze_alarm_ticks_ms = 0  # Ticks when the snooze alarm is raised
+
         self._alarms = settings.alarms
-        
+
         # rtc format:
         #  0     1      2    3    4     5       6       7
         # (year, month, day, dow, hour, minute, second, ms=0)
@@ -81,40 +80,34 @@ class AlarmHandler:  # *********************************************************
         #  0     1      2         3     4       5       6        7
         # (year, month, day,      hour, minute, second, weekday, yearday)
 
-
     def snooze_next(self):
         seconds_now = self.rtc.datetime()[6]
         if seconds_now < 30:
             msec_diff = seconds_now * -1000
         else:
             msec_diff = seconds_now * 1000
-            
-        self._snooze_alarm_ticks_ms = time.ticks_ms() + settings.snooze_time_m * 60000 + msec_diff
+
+        self._snooze_alarm_ticks_ms = time.ticks_ms() + settings.snooze_time_m * \
+            60000 + msec_diff
         self._alarm_count += 1
         self.set_alarm_next_rtcdt()
-
 
     def snooze_first(self):
         self._snooze_alarm_ticks_ms = time.ticks_ms()
         self.set_alarm_next_rtcdt()
 
- 
     def snooze_stop(self):
-        self._snooze_alarm_ticks_ms = 0 # = disabled
+        self._snooze_alarm_ticks_ms = 0  # = disabled
         self.set_alarm_next_rtcdt()
 
-
     def get_alarm(self):
-        #Alarm or snooze time is reached
+        # Alarm or snooze time is reached
         return time.ticks_ms() > self._snooze_alarm_ticks_ms > 0
-
 
     alarm = property(get_alarm)
 
-
     def _get_enabled(self):
         return self._enabled
-
 
     def _set_enabled(self, value):
         print("alarm enabled: " + str(self._enabled) + " -> " + str(value))
@@ -124,42 +117,40 @@ class AlarmHandler:  # *********************************************************
 
     enabled = property(_get_enabled, _set_enabled)
 
-
     def alarm_remaining_seconds(self, alarm_rtcdt):
         now_rtcdt = self.rtc.datetime()
         diff_dow = self._diff_dow(now_rtcdt, alarm_rtcdt)
 
-        ret = diff_dow * 86400 + self.midnight_elapsed_seconds(alarm_rtcdt) - self.midnight_elapsed_seconds(now_rtcdt)
+        ret = diff_dow * 86400 + \
+            self.midnight_elapsed_seconds(
+                alarm_rtcdt) - self.midnight_elapsed_seconds(now_rtcdt)
 
         return ret
-
 
     def alarm_next_remaining_seconds(self):
         if self._enabled:
             ret = self.alarm_remaining_seconds(self._alarm_next_rtcdt)
         else:
             ret = 999999
-            
+
         print("alarm_next_remaining_seconds=" + str(ret))
         return ret
-
 
     def diff_seconds_dt(self, first_dt, second_dt):
         first_mk = time.mktime(first_dt)
         second_mk = time.mktime(second_dt)
         return second_mk-first_mk
 
-
     def midnight_elapsed_seconds(self, rtcdt):
         ret = rtcdt[6] + rtcdt[5]*60 + rtcdt[4]*3600
         return ret
-
 
     def set_alarm_next_rtcdt(self):
         now_rtcdt = self.rtc.datetime()
         diff_dow_min = 8  # init dummy value
         for alarm in self._alarms:
-            alarm_rtcdt = [-1, -1, -1, alarm[0], alarm[1], alarm[2], 0, 0] #convert to pseudo RTC datetime
+            alarm_rtcdt = [-1, -1, -1, alarm[0], alarm[1],
+                           alarm[2], 0, 0]  # convert to pseudo RTC datetime
 
             diff_dow = self._diff_dow(now_rtcdt, alarm_rtcdt)
             # if the next alarm is today, then we have to check if it is elapsed already
@@ -170,7 +161,6 @@ class AlarmHandler:  # *********************************************************
 
         print("alarm_next_rtcdt=" + str(self._alarm_next_rtcdt))
         return self._alarm_next_rtcdt
-        
 
     def _diff_dow(self, val1, val2):
 
@@ -183,7 +173,7 @@ class AlarmHandler:  # *********************************************************
 
 
 class DisplayHandler:  # *****************************************************************************************************************
-    
+
     def __init__(self):
         spi = SPI(0, sck=Pin(18), mosi=Pin(19))
         cs = Pin(17, Pin.OUT)
@@ -206,7 +196,7 @@ class DisplayHandler:  # *******************************************************
         self._show_colon = False
         self._show_info = False
         self._alarm_enabled_led = False
-        
+
         self._sunrisesunset = (
             (9, 16),
             (8, 17),
@@ -242,7 +232,7 @@ class DisplayHandler:  # *******************************************************
             0x0000000000000000,
             0x0000030300030300,
             0x0000000000000303]
-        
+
         # D F M S T W (#11-#16)
         self._char_matrix_weekday_0 = [
             0x1f3333333333331f,
@@ -277,15 +267,19 @@ class DisplayHandler:  # *******************************************************
         '''
 
         self.wheels = (
-            wheel(self, x=0,  width=6, char_matrix=self._char_matrix_digits + self._char_matrix_weekday_0, order=settings.order),
-            wheel(self, x=7,  width=6, char_matrix=self._char_matrix_digits + self._char_matrix_weekday_1, order=settings.order),
-            wheel(self, x=14, width=2, char_matrix=self._char_matrix_colon, order=settings.order),
-            wheel(self, x=17, width=6, char_matrix=self._char_matrix_digits, order=settings.order),
-            wheel(self, x=24, width=6, char_matrix=self._char_matrix_digits, order=settings.order)
-            )
+            wheel(self, x=0,  width=6, char_matrix=self._char_matrix_digits +
+                  self._char_matrix_weekday_0, order=settings.order),
+            wheel(self, x=7,  width=6, char_matrix=self._char_matrix_digits +
+                  self._char_matrix_weekday_1, order=settings.order),
+            wheel(self, x=14, width=2,
+                  char_matrix=self._char_matrix_colon, order=settings.order),
+            wheel(self, x=17, width=6,
+                  char_matrix=self._char_matrix_digits, order=settings.order),
+            wheel(self, x=24, width=6,
+                  char_matrix=self._char_matrix_digits, order=settings.order)
+        )
 
         self.wheel_count = len(self.wheels)
-
 
     def wheels_move_to(self, chars, show_info):
         print("wheels_move_to", chars)
@@ -293,11 +287,10 @@ class DisplayHandler:  # *******************************************************
         self._show_info = show_info
 
         # Move digit wheels 0-3:
-        for dpos in range (0, self.wheel_count):
+        for dpos in range(0, self.wheel_count):
             self.wheels[dpos].frame_move_to(chars[dpos])
-            
-        self.play()
 
+        self.play()
 
     def play(self):
         motion = True
@@ -315,20 +308,18 @@ class DisplayHandler:  # *******************************************************
     def draw_info(self):
         if self.alarm_enabled_led and self._show_info:
             self.disp.pixel(31, 7, self.fg_col)
-        else:        
+        else:
             self.disp.pixel(31, 7, self.bg_col)
- 
+
     def wheels_refresh(self):
         self.draw_info()
         for dpos in range(0, self.wheel_count):
             self.wheels[dpos].refresh()
         self.show()
 
-
     def draw_character(self, chr, x):
         for row in range(0, 8):
             self. draw_character_row(chr, x, row, row, 8)
-
 
     def draw_character_row(self, chr, x, y, char_row, width=6):
         if char_row >= 0:
@@ -337,10 +328,8 @@ class DisplayHandler:  # *******************************************************
                 if 1 << col & val_col:
                     self.disp.pixel(x + col, y, self.fg_col)
 
-
     def show(self):
         self.disp.show()
-
 
     def _set_brightness(self, value):
         if self._brightness != value:
@@ -348,131 +337,116 @@ class DisplayHandler:  # *******************************************************
             print("brightness: " + str(self._brightness) + " -> " + str(value))
             self._brightness = value
 
-
     def _get_brightness(self):
         return self._brightness
 
-
     brightness = property(_get_brightness, _set_brightness)
-
 
     def set_brightness_from_time(self, rtcdt):
         month = rtcdt[1]
         hour = rtcdt[4]
 
         sunrise, sunset = self._sunrisesunset[month-1]
-        
+
         if sunrise <= hour < sunset:
             self.brightness = 3
         else:
             self.brightness = 0
 
-
     def ticker(self, text):
-        t=text + "    "
+        t = text + "    "
         for x in range(32, len(t)*-8, -1):
             self.clear()
             self.disp.text(t, x, 0, self.fg_col)
             self.disp.show()
             time.sleep(self._row_seconds)
 
-
     def clear(self):
         self.disp.fill(self.bg_col)
-
 
     def text(self, text, x, y):
         self.disp.text(text, x, y, self.fg_col)
 
-
     def _get_show_colon(self):
         return self._show_colon
-    
-    show_colon = property(_get_show_colon)
 
+    show_colon = property(_get_show_colon)
 
     def _set_alarm_enabled_led(self, value):
         self._alarm_enabled_led = value
 
-
     def _get_alarm_enabled_led(self):
         return self._alarm_enabled_led
 
-    alarm_enabled_led = property(_get_alarm_enabled_led, _set_alarm_enabled_led)
-    
+    alarm_enabled_led = property(
+        _get_alarm_enabled_led, _set_alarm_enabled_led)
+
 
 class wheel:
-    
+
     def __init__(self, hdisp, x, width, char_matrix, order):
         self._hdisp = hdisp
         self._x = x
         self._pos = 0
         self._width = width
-        self._char_matrix = char_matrix        
+        self._char_matrix = char_matrix
         self._char_count = len(self._char_matrix)
         self._char_height = 9
         self._pos_count = self._char_height * self._char_count  # 99
         self._order = order
 
-        self._start_pattern = (0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0)
-        self._stop_pattern = (1, 1, 1, 0, 1, 0, 0, 1, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, -1)
+        self._start_pattern = (0, 0, 0, 1, 0, 0, 0, 1, 0,
+                               0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0)
+        self._stop_pattern = (1, 1, 1, 0, 1, 0, 0, 1, 0, -1, 0, 0, -1, 0,
+                              0, -1, 0, 0, -1, 0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, -1)
 
         self.frames_reset()
         self.build()
 
-
     def get_dpos(self):
         return self._hdisp.wheels.index(self)
 
-
-    dpos = property(get_dpos) 
-
+    dpos = property(get_dpos)
 
     def get_x(self):
         return self._x
 
-
     x = property(get_x)
-
 
     def get_char(self):
         return self._wheel[self._pos][0]
 
-
     char = property(get_char)
-
 
     def build(self):
         # creates all positions possible on the wheel as an array self._wheel
         self._wheel = []
-                
+
         for pos in range(0, self._pos_count):
-            char_num = (self._pos_count-1-pos // self._char_height + 1) % self._char_count
+            char_num = (self._pos_count-1-pos //
+                        self._char_height + 1) % self._char_count
 
             if self._order == 1:
-                char_num = (self._char_count - char_num) % self._char_count                    
+                char_num = (self._char_count - char_num) % self._char_count
 
             row = pos % self._char_height
 
             self._wheel.append((char_num, row))
 
-
     def frames_reset(self):
         self._frames = []
-        self._frame = -1      
-
+        self._frame = -1
 
     def frame_add(self, direction):
         if self._frames == []:
             pos_last = self._pos
         else:
             pos_last = self._frames[-1]
-        
-        pos_new = (pos_last + direction) % self._pos_count        
+
+        pos_new = (pos_last + direction) % self._pos_count
         self._frames.append(pos_new)
 
         return pos_new
-
 
     def frame_add_to_char(self, char, direction):
 
@@ -482,18 +456,17 @@ class wheel:
 
             for pos in range(0, (4-self.dpos)*10):  # 4 = 5 Wheels -> 0-based
                 self.frame_add(0)
-                
+
             for sign in self._start_pattern:
                 self.frame_add(sign*direction)
 
             while not (chr_current == char and char_row_current == 0):
                 pos_new = self.frame_add(direction)
-                    
+
                 chr_current, char_row_current = self._wheel[pos_new]
 
             for sign in self._stop_pattern:
                 self.frame_add(sign*direction)
-
 
     def draw_next(self):
         if self._frames != [] and self._frame < len(self._frames)-1:
@@ -507,31 +480,28 @@ class wheel:
 
         return ret
 
-
     def draw_pos(self, pos):
         self._pos = pos % self._pos_count  # 98 -> 98,   99 -> 0,  -1 -> 98
 
-        for y in range (0,8):
+        for y in range(0, 8):
             wp2 = (self._pos + y) % self._pos_count
             chr, char_row = self._wheel[wp2]
             self.draw_character_row(chr, self._x, y, char_row)
-
 
     def draw_character_row(self, chr, x, y, char_row):
         if char_row >= 0:
             val_col = (self._char_matrix[chr] >> 8 * char_row) & 0xFF
             for col in range(0, self._width):
-                self._hdisp.disp.pixel(x + col, y, self._hdisp.fg_col if 1 << col & val_col else self._hdisp.bg_col)
-
+                self._hdisp.disp.pixel(
+                    x + col, y, self._hdisp.fg_col if 1 << col & val_col else self._hdisp.bg_col)
 
     def refresh(self):
         self.draw_pos(self._pos)  # Just refresh the wheel's display
 
-
     def shortest_direction(self, f, t):
-        
+
         if f == t:
-            direction = 0                                                            
+            direction = 0
         else:
             dist = t - f
             if dist > 0:
@@ -540,14 +510,13 @@ class wheel:
             else:
                 distance_down = self._char_count + dist
                 distance_up = -dist
-            
+
             if distance_up < distance_down:
                 direction = 1
             else:
                 direction = -1
- 
-        return direction * -self._order
 
+        return direction * -self._order
 
     def frame_move_to(self, char):
         if settings.rotation == 'shortest':
@@ -559,9 +528,9 @@ class wheel:
 
         if direction != 0:
             self.frame_add_to_char(char, direction)
-        
-        
-class PiClock:  # *****************************************************************************************************************
+
+
+class MatriClock:  # *****************************************************************************************************************
 
     def __init__(self):
 
@@ -586,7 +555,7 @@ class PiClock:  # **************************************************************
 
         self.alh = AlarmHandler(self.rtc)
         self._hdisp.alarm_enabled_led = self.alh.enabled
-        
+
         self._mode = 'None'
         self._mode_before = 'None'
         self._settimefrominternet_last = None
@@ -603,7 +572,7 @@ class PiClock:  # **************************************************************
         self.service = 'http://worldtimeapi.org/api/'
         if settings.timezone == 'auto':
             self.url = self.service + 'ip'
-        else:            
+        else:
             self.url = self.service + 'timezone/' + settings.timezone
 
         if settings.language == 'de':
@@ -615,7 +584,7 @@ class PiClock:  # **************************************************************
                 (12, 16),
                 (14, 11),
                 (14, 15))
-            
+
         elif settings.language == 'en':
             self._weekday_chars = (
                 (13, 15),
@@ -625,7 +594,6 @@ class PiClock:  # **************************************************************
                 (12, 16),
                 (14, 11),
                 (14, 17))
-
 
     def my_round(self, n, ndigits):
         # Necessary because Python 3 is rounding using round-to-even according to IEE754
@@ -639,12 +607,11 @@ class PiClock:  # **************************************************************
             part = math.floor(part)
         return part / (10 ** ndigits) if ndigits >= 0 else part * 10 ** abs(ndigits)
 
-
     # Extract JSON from HTTP response:
+
     def findJson(self, response):
         txt = 'abbreviation'
         return response[response.find(txt)-2:]
-
 
     def _set_mode(self, value):
         if value != self._mode:
@@ -666,13 +633,10 @@ class PiClock:  # **************************************************************
             elif value == 'date':
                 self.mode_date()
 
-
     def _get_mode(self):
         return self._mode
 
-
     mode = property(_get_mode, _set_mode)
-
 
     def mode_temp(self):
         if self.mode == 'temp':
@@ -687,7 +651,7 @@ class PiClock:  # **************************************************************
             humidity = int(self.my_round(self._dht22.humidity(), 0))
             if humidity > 99:
                 humidity = 99
-                
+
             h1 = humidity // 10
             h0 = humidity % 10
 
@@ -696,7 +660,6 @@ class PiClock:  # **************************************************************
 
             chars = [t1, t0, 2, h1, h0]
             self._hdisp.wheels_move_to(chars, show_info=False)
-
 
     def mode_date(self):
         if self.mode == 'date':
@@ -712,10 +675,8 @@ class PiClock:  # **************************************************************
             chars = [wdc[0], wdc[1], 0, d1, d0]
             self._hdisp.wheels_move_to(chars, show_info=False)
 
-
     def mode_standby(self):
         self._hdisp.wheels_move_to([10, 10, 0, 10, 10], show_info=False)
-
 
     def mode_buttontest(self):
         print("mode_buttontest()")
@@ -727,7 +688,6 @@ class PiClock:  # **************************************************************
                 self._hdisp.disp.rect(pos[bnid][0], pos[bnid][1], 2, 2, 1)
 
         self._hdisp.show()
-
 
     def mode_clock(self):
         if self.mode == 'clock':
@@ -744,12 +704,11 @@ class PiClock:  # **************************************************************
 
             m1 = minutes // 10
             m0 = minutes % 10
- 
+
             if h1 == 0 and not settings.leading_zero:
                 h1 = 10
 
             self._hdisp.wheels_move_to([h1, h0, 1, m1, m0], show_info=True)
-
 
     def wificonnect(self):
         self.wlan = network.WLAN(network.STA_IF)
@@ -767,11 +726,11 @@ class PiClock:  # **************************************************************
         while cont:
             passes += 1
             cont = not self.wlan.isconnected() and self.wlan.status() >= 0
-            print("WLAN: Waiting to connect, pass " + str(passes) + ": status=" + str(self.wlan.status()))
+            print("WLAN: Waiting to connect, pass " + str(passes) +
+                  ": status=" + str(self.wlan.status()))
             time.sleep(1)
 
         print("WLAN: Connected.")
-
 
     def settimefrominternet(self):
         if not self._settimefrominternet_running:
@@ -788,11 +747,11 @@ class PiClock:  # **************************************************************
                     response = urequests.get(self.url)
                     response_text = response.text
                     response.close()
-                    
+
                 except ValueError as e:
                     print(e)
                     response_text = ""
-                    
+
                 except OSError as e:
                     print(e)
                     response_text = ""
@@ -823,28 +782,27 @@ class PiClock:  # **************************************************************
                 minutes = int(dtstring[14:16])
                 seconds = int(dtstring[17:19])
                 subseconds = 0
-                
-                rtcdt = (year, month, day, day_of_week, hours, minutes, seconds, subseconds)
+
+                rtcdt = (year, month, day, day_of_week,
+                         hours, minutes, seconds, subseconds)
                 self.rtc.datetime(rtcdt)
                 self._settimefrominternet_last = rtcdt
-                print("rtcdt, now, last=", rtcdt, self.rtc.datetime(), self._settimefrominternet_last)
+                print("rtcdt, now, last=", rtcdt, self.rtc.datetime(),
+                      self._settimefrominternet_last)
                 self.alh.set_alarm_next_rtcdt()
 
-            time.sleep(1)            
+            time.sleep(1)
             self._settimefrominternet_running = False
-
 
     def beep(self, duration_s):
         self.abuzzer.value(1)
         time.sleep(duration_s)
         self.abuzzer.value(0)
 
-
     def beep4x(self):
         for nr in range(0, 4):
             self.beep(0.03)
             time.sleep(0.15)
-                    
 
     def selftest(self):
         self._hdisp.disp.fill(1)
@@ -854,17 +812,14 @@ class PiClock:  # **************************************************************
         self._hdisp.disp.fill(0)
         self._hdisp.disp.show()
 
-
     def PinId(self, pin):
         return int(str(pin)[4:6].rstrip(","))
-
 
     def _get_button(self, pin):
         for button in self._buttons:
             if button.pin == pin:
                 return button
         return None
-
 
     def speedtest(self):
         start = time.ticks_ms()
@@ -873,14 +828,12 @@ class PiClock:  # **************************************************************
         end = time.ticks_ms()
         print("stopwatch", end-start)
 
-
     def start(self):
         self.buttons_enabled = False
         self.selftest()
         self.mode = 'clock'
         self.buttons_enabled = True
         self.minute_loop()
-
 
     def sleep_until_second(self, second):
         rtcdt = self.rtc.datetime()
@@ -895,29 +848,28 @@ class PiClock:  # **************************************************************
             else:
                 time.sleep(1)
 
-
     def minute_loop(self):
         while True:
             rtcdt = self.rtc.datetime()
-            print("minute_loop at " + str(rtcdt[4]) + ":" + str(rtcdt[5]) + ":" + str(rtcdt[6]))
+            print("minute_loop at " +
+                  str(rtcdt[4]) + ":" + str(rtcdt[5]) + ":" + str(rtcdt[6]))
             # Sync time if it hasn't been synced before or if it is after 2 a.m. and the last sync is a day ago:
             if self._settimefrominternet_last == None \
                or (rtcdt[4] >= 2 and self._settimefrominternet_last[2] != rtcdt[2]):
                 print(self._settimefrominternet_last, rtcdt)
                 self.wificonnect()
                 self.settimefrominternet()
-                
+
             self.mode_clock()
 
             if self.alh.alarm_next_remaining_seconds() <= 1:
                 self.alh.snooze_first()
                 self.mode = 'clock'
-                
+
             self.sleep_until_second(0)
 
             if self.mode == 'temp':
                 self.mode_temp()  # refresh temperature and humidity display
-
 
     def bn_hdl(self, pin):
         if self.buttons_enabled:
@@ -927,8 +879,9 @@ class PiClock:  # **************************************************************
 
             if button.value_changed() and button.value():
                 self.beep(0.001)
-                print("alarm = " + str(self.alh.alarm), ", button.id = " + str(button.id) + ", mode = " + self.mode )
-                
+                print("alarm = " + str(self.alh.alarm), ", button.id = " +
+                      str(button.id) + ", mode = " + self.mode)
+
                 if self.alh.alarm and button.id == self.bn1 and self.mode == 'clock':
                     self.action_snooze()
                 elif self.alh.alarm and button.id == self.bn1 and self.mode == 'standby':
@@ -958,7 +911,6 @@ class PiClock:  # **************************************************************
                 elif not self.alh.alarm and button.id == self.bn2 and self.mode == 'standby':
                     self.action_alarm_toggle()
 
-
     def action_alarm_toggle(self):
         self.alh.enabled = not self.alh.enabled
         self._hdisp.alarm_enabled_led = self.alh.enabled
@@ -972,18 +924,18 @@ class PiClock:  # **************************************************************
 
     def action_clock(self):
         self.mode = 'clock'
-        
+
     def action_temp(self):
         self.mode = 'temp'
 
     def action_date(self):
         self.mode = 'date'
-        
+
     def action_standby(self):
         self.mode = 'standby'
-     
-     
+
+
 # ---------------- Main program ----------------
 
-picl = PiClock()
-picl.start()
+macl = MatriClock()
+macl.start()
