@@ -36,31 +36,25 @@ Video on [Youtube](https://youtu.be/pl6CCcmThhM)
 |Button bn0 |S0         |27       |GP21      |
 |           |S1         |36       |3V3(OUT)  |
 |           |10k        |28       |GND       |
-|           |           |         |          |
 |Button bn1 |S0         |29       |GP22      |
 |           |S1         |36       |3V3(OUT)  |
 |           |10k        |28       |GND       |
-|           |           |         |          |
 |Button bn2 |S0         |32       |GP27      |
 |           |S1         |36       |3V3(OUT)  |
 |           |10k        |28       |GND       |
-|           |           |         |          |
 |Buzzer     |S          |34       |GP28      |
 |           |+          |36       |3V3(OUT)  |
 |           |-          |23       |GND       |
-|           |           |         |          |
 |Matrix LED |CLK        |24       |GP18      |
 |           |DIN        |25       |GP19      |
 |           |CS         |22       |GP17      |
 |           |VCC        |40       |VBUS      |
 |           |GND        |23       |GND       |
-|           |           |         |          |
 |DHT22      |DATA       |19       |GP14      |
 |           |VCC        |36       |3V3(OUT)  |
 |           |GND        |23       |GND       |
-|           |           |         |          |
 
 
 ## Starting the clock
  - Edit settings in config.py
- - Copy main.py and config.py to your Raspberry Pi Pico in Bootloader mode
+ - Copy main.py, config.py and max7219.py to your Raspberry Pi Pico in Bootloader mode

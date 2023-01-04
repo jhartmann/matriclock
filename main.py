@@ -197,20 +197,6 @@ class DisplayHandler:  # *******************************************************
         self._show_info = False
         self._alarm_enabled_led = False
 
-        self._sunrisesunset = (
-            (9, 16),
-            (8, 17),
-            (7, 18),
-            (7, 20),
-            (6, 21),
-            (5, 22),
-            (5, 22),
-            (6, 21),
-            (6, 20),
-            (7, 19),
-            (7, 17),
-            (8, 16))
-
         # characters can be designed with LED matrix editor on
         # https://xantorohara.github.io/led-matrix-editor/#
 
@@ -346,12 +332,12 @@ class DisplayHandler:  # *******************************************************
         month = rtcdt[1]
         hour = rtcdt[4]
 
-        sunrise, sunset = self._sunrisesunset[month-1]
+        sunrise, sunset = settings.sunrisesunset[month-1]
 
         if sunrise <= hour < sunset:
-            self.brightness = 3
+            self.brightness = settings.brightness_day
         else:
-            self.brightness = 0
+            self.brightness = settings.brightness_night
 
     def ticker(self, text):
         t = text + "    "
@@ -454,7 +440,7 @@ class wheel:
 
         if not chr_current == char and char_row_current == 0:
 
-            for pos in range(0, (4-self.dpos)*10):  # 4 = 5 Wheels -> 0-based
+            for pos in range(0, (4-self.dpos)*12):  # 4 = 5 Wheels -> 0-based
                 self.frame_add(0)
 
             for sign in self._start_pattern:
@@ -907,8 +893,6 @@ class MatriClock:  # ***********************************************************
                 elif not self.alh.alarm and button.id == self.bn1 and self.mode == 'temp':
                     self.action_standby()
                 elif not self.alh.alarm and button.id == self.bn2 and self.mode == 'clock':
-                    self.action_alarm_toggle()
-                elif not self.alh.alarm and button.id == self.bn2 and self.mode == 'standby':
                     self.action_alarm_toggle()
 
     def action_alarm_toggle(self):
