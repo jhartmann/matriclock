@@ -1,7 +1,7 @@
 # matriclock
 
 ## Overview
-matriclock is an alarm clock written in Micropython for Raspberry Pi Pico WH.
+matriclock is an alarm clock written in Micropython for Raspberry Pi Pico W.
 See video on [Youtube](https://youtu.be/pl6CCcmThhM)
 
 
@@ -58,7 +58,7 @@ See video on [Youtube](https://youtu.be/pl6CCcmThhM)
 |           |VCC        |36       |3V3(OUT)  |
 |           |GND        |23       |GND       |
 
+Buttons: Connect S0 to GPIO, S1 to 3V3, and place 10KΩ pull-down resistors between GND and each GPIO.
 DHT22: Place a 10KΩ pull-up resistor between VCC and DATA of DHT22.
-Buttons: Connect S0 to GPIO, S1 to 3V3, and place 10KΩ pull-down resistors between GND and each S0.
 
 
