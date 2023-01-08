@@ -4,13 +4,11 @@ import math
 import max7219
 import json
 import network
-import socket
 import sys
 import urequests
 import micropython
 from dht import DHT22
 from config import settings
-import rp2
 
 
 class Button:  # *****************************************************************************************************************
@@ -233,12 +231,12 @@ class DisplayHandler:  # *******************************************************
             0x3e33333e301e0000,
             0x1e33031f331e0000,
             0x333333331f030303,
-            0x0606060606000606,
+            0x0606060606000600,
             0x1e3333331e000000,
             0x060606061e000000,
             0x3e33333333000000]
 
-        # You can use uppercase characters if you like (Fr instead of FR)
+        # You can use uppercase characters if you like (FR instead of Fr)
         # Just exchange _char_matrix_weekday_1 above with the following matrix:
         '''
         # A E H I O R U (#11-16)
@@ -520,8 +518,6 @@ class MatriClock:  # ***********************************************************
 
     def __init__(self):
 
-        rp2.country('DE')
-
         self._hdisp = DisplayHandler()
         self._dht22 = DHT22(Pin(14, Pin.IN, Pin.PULL_UP))
 
@@ -630,7 +626,15 @@ class MatriClock:  # ***********************************************************
             print("temperature=" + str(self._dht22.temperature()))
             print("humidity=" + str(self._dht22.humidity()))
 
-            temp = int(self.my_round(self._dht22.temperature(), 0))
+            temp_celsius = int(self.my_round(self._dht22.temperature(), 0))
+            if settings.temperature_unit == 'C':
+                temp = temp_celsius
+            elif settings.temperature_unit == 'F':
+                temp = temp_celsius * 1.8 + 32
+            
+            if temp > 99:
+                temp = 99
+
             t1 = temp // 10
             t0 = temp % 10
 
@@ -730,6 +734,7 @@ class MatriClock:  # ***********************************************************
             while (response_text == "") and passes < 30:
                 response = None
                 try:
+                    print("requesting time from URL " + self.url + "...")
                     response = urequests.get(self.url)
                     response_text = response.text
                     response.close()
@@ -765,6 +770,11 @@ class MatriClock:  # ***********************************************************
                 month = int(dtstring[5:7])
                 day = int(dtstring[8:10])
                 hours = int(dtstring[11:13])
+
+                # the time format of worldtimeapi.org is 24-hour clock for any country
+                if settings.time_convention_hours == 12:
+                    hours = hours % 12
+                    
                 minutes = int(dtstring[14:16])
                 seconds = int(dtstring[17:19])
                 subseconds = 0
