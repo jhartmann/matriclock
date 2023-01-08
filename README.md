@@ -23,7 +23,7 @@ See video on [Youtube](https://youtu.be/pl6CCcmThhM)
  - Copy main.py, config.py, and max7219.py to your Raspberry Pi Pico in Bootloader mode
 
 
-## Remark: Unreliable time 
+## Remark: Wifi connection failing
 In my home WLAN network, the connection to wifi is established exactly every second time the clock is started (connected to the power supply). I don't know whether this bevahiour has to do with my network, my hardware, or with the micropython firmware.
 
 
