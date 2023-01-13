@@ -8,8 +8,7 @@ import sys
 import urequests
 import micropython
 from dht import DHT22
-from config import settings
-
+from config import settings # this is the 'settings' class in the file 'config.py'
 
 class Button:  # *****************************************************************************************************************
 
@@ -192,8 +191,11 @@ class DisplayHandler:  # *******************************************************
         self._brightness = 99  # uninitialized
 
         self._show_colon = False
-        self._show_info = False
-        self._alarm_enabled_led = False
+        self._show_alarm_enabled = False
+        self._alarm_enabled = False
+
+        self._show_time_sync_failed = False
+        self._time_sync_failed = True
 
         # characters can be designed with LED matrix editor on
         # https://xantorohara.github.io/led-matrix-editor/#
@@ -265,10 +267,11 @@ class DisplayHandler:  # *******************************************************
 
         self.wheel_count = len(self.wheels)
 
-    def wheels_move_to(self, chars, show_info):
+    def wheels_move_to(self, chars, show_alarm_enabled, show_time_sync_failed):
+        self._show_alarm_enabled = show_alarm_enabled
+        self._show_time_sync_failed = show_time_sync_failed
         print("wheels_move_to", chars)
-
-        self._show_info = show_info
+        print("wm _show_time_sync_failed", self._show_time_sync_failed)
 
         # Move digit wheels 0-3:
         for dpos in range(0, self.wheel_count):
@@ -282,6 +285,7 @@ class DisplayHandler:  # *******************************************************
             motion = False
             self.clear()
             self.draw_info()
+            self.draw_time_sync_failed()
 
             for dpos in range(0, self.wheel_count):
                 motion = self.wheels[dpos].draw_next() or motion
@@ -290,13 +294,20 @@ class DisplayHandler:  # *******************************************************
             time.sleep(self._row_seconds)
 
     def draw_info(self):
-        if self.alarm_enabled_led and self._show_info:
+        if self.alarm_enabled and self._show_alarm_enabled:
             self.disp.pixel(31, 7, self.fg_col)
-        else:
-            self.disp.pixel(31, 7, self.bg_col)
 
-    def wheels_refresh(self):
+    def draw_time_sync_failed(self):
+        print("self.time_sync_failed", self.time_sync_failed)
+        print("self._show_time_sync_failed", self._show_time_sync_failed)
+        if self.time_sync_failed and self._show_time_sync_failed:
+            self.disp.vline(31, 0, 3, self.fg_col)
+            self.disp.pixel(31, 4, self.fg_col)
+
+    def refresh(self):
+        self.clear()
         self.draw_info()
+        self.draw_time_sync_failed()
         for dpos in range(0, self.wheel_count):
             self.wheels[dpos].refresh()
         self.show()
@@ -356,15 +367,24 @@ class DisplayHandler:  # *******************************************************
 
     show_colon = property(_get_show_colon)
 
-    def _set_alarm_enabled_led(self, value):
-        self._alarm_enabled_led = value
+    def _set_alarm_enabled(self, value):
+        self._alarm_enabled = value
 
-    def _get_alarm_enabled_led(self):
-        return self._alarm_enabled_led
+    def _get_alarm_enabled(self):
+        return self._alarm_enabled
 
-    alarm_enabled_led = property(
-        _get_alarm_enabled_led, _set_alarm_enabled_led)
+    alarm_enabled = property(
+        _get_alarm_enabled, _set_alarm_enabled)
 
+
+    def _set_time_sync_failed(self, value):
+        self._time_sync_failed = value
+
+    def _get_time_sync_failed(self):
+        return self._time_sync_failed
+
+    time_sync_failed = property(
+        _get_time_sync_failed, _set_time_sync_failed)
 
 class wheel:
 
@@ -526,6 +546,7 @@ class MatriClock:  # ***********************************************************
         self.rtc.datetime((2022, 1, 1, 6, 12, 0, 0, 0))
 
         self._rtcdt_last_set = None
+        self._time_synced = False
 
         self.bn0 = 21  # left
         self.bn1 = 22  # middle
@@ -536,7 +557,7 @@ class MatriClock:  # ***********************************************************
         self._alarm_dt = None
 
         self.alh = AlarmHandler(self.rtc)
-        self._hdisp.alarm_enabled_led = self.alh.enabled
+        self.alarm_enabled = True
 
         self._mode = 'None'
         self._mode_before = 'None'
@@ -620,6 +641,15 @@ class MatriClock:  # ***********************************************************
 
     mode = property(_get_mode, _set_mode)
 
+    def _set_alarm_enabled(self, value):
+        self.alh.enabled = value        
+        self._hdisp.alarm_enabled = value
+                
+    def _get_alarm_enabled(self):
+        return self.alh.enabled
+
+    alarm_enabled = property(_get_alarm_enabled, _set_alarm_enabled)
+
     def mode_temp(self):
         if self.mode == 'temp':
             self._dht22.measure()
@@ -649,7 +679,16 @@ class MatriClock:  # ***********************************************************
                 t1 = 10
 
             chars = [t1, t0, 2, h1, h0]
-            self._hdisp.wheels_move_to(chars, show_info=False)
+            self._hdisp.wheels_move_to(chars, show_alarm_enabled=False, show_time_sync_failed=False)
+
+    def get_time_synced(self):
+        return self._time_synced
+    
+    def set_time_synced(self, value):
+        self._time_synced = value
+        self._hdisp.time_sync_failed = not value
+
+    time_synced = property(get_time_synced, set_time_synced)
 
     def mode_date(self):
         if self.mode == 'date':
@@ -663,10 +702,10 @@ class MatriClock:  # ***********************************************************
             wdc = self._weekday_chars[weekday]
 
             chars = [wdc[0], wdc[1], 0, d1, d0]
-            self._hdisp.wheels_move_to(chars, show_info=False)
+            self._hdisp.wheels_move_to(chars, show_alarm_enabled=False, show_time_sync_failed=False)
 
     def mode_standby(self):
-        self._hdisp.wheels_move_to([10, 10, 0, 10, 10], show_info=False)
+        self._hdisp.wheels_move_to([10, 10, 0, 10, 10], show_alarm_enabled=False, show_time_sync_failed=False)
 
     def mode_buttontest(self):
         print("mode_buttontest()")
@@ -698,7 +737,7 @@ class MatriClock:  # ***********************************************************
             if h1 == 0 and not settings.leading_zero:
                 h1 = 10
 
-            self._hdisp.wheels_move_to([h1, h0, 1, m1, m0], show_info=True)
+            self._hdisp.wheels_move_to([h1, h0, 1, m1, m0], show_alarm_enabled=True, show_time_sync_failed=True)
 
     def wificonnect(self):
         self.wlan = network.WLAN(network.STA_IF)
@@ -725,6 +764,7 @@ class MatriClock:  # ***********************************************************
     def settimefrominternet(self):
         if not self._settimefrominternet_running:
             self._settimefrominternet_running = True
+            self.time_synced = False
             print('settimefrominternet()')
 
             # Reading HTTP Response
@@ -782,6 +822,7 @@ class MatriClock:  # ***********************************************************
                 rtcdt = (year, month, day, day_of_week,
                          hours, minutes, seconds, subseconds)
                 self.rtc.datetime(rtcdt)
+                self.time_synced = True
                 self._settimefrominternet_last = rtcdt
                 print("rtcdt, now, last=", rtcdt, self.rtc.datetime(),
                       self._settimefrominternet_last)
@@ -819,8 +860,8 @@ class MatriClock:  # ***********************************************************
 
     def speedtest(self):
         start = time.ticks_ms()
-        self._hdisp.wheels_move_to([0, 0, 0, 0, 0], show_info=True)
-        self._hdisp.wheels_move_to([5, 5, 0, 5, 5], show_info=True)
+        self._hdisp.wheels_move_to([0, 0, 0, 0, 0], show_alarm_enabled=True, show_time_sync_failed=True)
+        self._hdisp.wheels_move_to([5, 5, 0, 5, 5], show_alarm_enabled=True, show_time_sync_failed=True)
         end = time.ticks_ms()
         print("stopwatch", end-start)
 
@@ -855,7 +896,7 @@ class MatriClock:  # ***********************************************************
                 print(self._settimefrominternet_last, rtcdt)
                 self.wificonnect()
                 self.settimefrominternet()
-
+                
             self.mode_clock()
 
             if self.alh.alarm_next_remaining_seconds() <= 1:
@@ -906,9 +947,8 @@ class MatriClock:  # ***********************************************************
                     self.action_alarm_toggle()
 
     def action_alarm_toggle(self):
-        self.alh.enabled = not self.alh.enabled
-        self._hdisp.alarm_enabled_led = self.alh.enabled
-        self._hdisp.wheels_refresh()
+        self.alarm_enabled = not self.alarm_enabled
+        self._hdisp.refresh()
 
     def action_snooze(self):
         self.alh.snooze_next()
