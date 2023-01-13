@@ -271,7 +271,6 @@ class DisplayHandler:  # *******************************************************
         self._show_alarm_enabled = show_alarm_enabled
         self._show_time_sync_failed = show_time_sync_failed
         print("wheels_move_to", chars)
-        print("wm _show_time_sync_failed", self._show_time_sync_failed)
 
         # Move digit wheels 0-3:
         for dpos in range(0, self.wheel_count):
@@ -298,8 +297,6 @@ class DisplayHandler:  # *******************************************************
             self.disp.pixel(31, 7, self.fg_col)
 
     def draw_time_sync_failed(self):
-        print("self.time_sync_failed", self.time_sync_failed)
-        print("self._show_time_sync_failed", self._show_time_sync_failed)
         if self.time_sync_failed and self._show_time_sync_failed:
             self.disp.vline(31, 0, 3, self.fg_col)
             self.disp.pixel(31, 4, self.fg_col)
@@ -541,7 +538,7 @@ class MatriClock:  # ***********************************************************
         self._hdisp = DisplayHandler()
         self._dht22 = DHT22(Pin(14, Pin.IN, Pin.PULL_UP))
 
-        self._settimefrominternet_running = False
+        self._time_sync_running = False
         self.rtc = machine.RTC()
         self.rtc.datetime((2022, 1, 1, 6, 12, 0, 0, 0))
 
@@ -561,7 +558,7 @@ class MatriClock:  # ***********************************************************
 
         self._mode = 'None'
         self._mode_before = 'None'
-        self._settimefrominternet_last = None
+        self._time_sync_last = None
 
         self.abuzzer = Pin(28, Pin.OUT)
 
@@ -612,9 +609,9 @@ class MatriClock:  # ***********************************************************
 
     # Extract JSON from HTTP response:
 
-    def findJson(self, response):
+    def findJson(self, response_text):
         txt = 'abbreviation'
-        return response[response.find(txt)-2:]
+        return response_text[response_text.find(txt)-2:]
 
     def _set_mode(self, value):
         if value != self._mode:
@@ -749,48 +746,58 @@ class MatriClock:  # ***********************************************************
 
         self.wlan.connect(settings.wifi_ssid, settings.wifi_password)
 
+        print("ifconfig=", self.wlan.ifconfig())
+        
         passes = 0
-
         cont = True
         while cont:
             passes += 1
-            cont = not self.wlan.isconnected() and self.wlan.status() >= 0
+            cont = not self.wlan.isconnected() and passes < 30
             print("WLAN: Waiting to connect, pass " + str(passes) +
                   ": status=" + str(self.wlan.status()))
-            time.sleep(1)
+            machine.idle()
 
-        print("WLAN: Connected.")
+        print("WLAN: Connected, status=", self.wlan.status())
 
-    def settimefrominternet(self):
-        if not self._settimefrominternet_running:
-            self._settimefrominternet_running = True
+    def time_sync(self):
+        if not self._time_sync_running:
+            self._time_sync_running = True
             self.time_synced = False
-            print('settimefrominternet()')
+            print('time_sync()')
 
             # Reading HTTP Response
             passes = 0
             response_text = ""
 
-            while (response_text == "") and passes < 30:
+            repeat = True
+
+            while repeat:
                 response = None
                 try:
                     print("requesting time from URL " + self.url + "...")
-                    response = urequests.get(self.url)
+                    headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.110 Safari/537.36'}
+                    response = urequests.get(self.url, headers=headers)
                     response_text = response.text
-                    response.close()
-
+                    print("response.status_code=", response.status_code)
                 except ValueError as e:
-                    print(e)
+                    print("ValueError:", e)
                     response_text = ""
 
                 except OSError as e:
-                    print(e)
+                    print("OSError:", e)
                     response_text = ""
+                    
+                finally:
+                    if response != None:
+                        response.close()
+                        print("response closed.")
 
                 if response_text == "":
                     time.sleep(1)
                 passes += 1
 
+                repeat = (response_text == "" and passes < 30)
+                
             if len(response_text) > 0:
                 jsonData = self.findJson(response_text)
                 aDict = json.loads(jsonData)
@@ -823,13 +830,13 @@ class MatriClock:  # ***********************************************************
                          hours, minutes, seconds, subseconds)
                 self.rtc.datetime(rtcdt)
                 self.time_synced = True
-                self._settimefrominternet_last = rtcdt
+                self._time_sync_last = rtcdt
                 print("rtcdt, now, last=", rtcdt, self.rtc.datetime(),
-                      self._settimefrominternet_last)
+                      self._time_sync_last)
                 self.alh.set_alarm_next_rtcdt()
 
             time.sleep(1)
-            self._settimefrominternet_running = False
+            self._time_sync_running = False
 
     def beep(self, duration_s):
         self.abuzzer.value(1)
@@ -891,11 +898,11 @@ class MatriClock:  # ***********************************************************
             print("minute_loop at " +
                   str(rtcdt[4]) + ":" + str(rtcdt[5]) + ":" + str(rtcdt[6]))
             # Sync time if it hasn't been synced before or if it is after 2 a.m. and the last sync is a day ago:
-            if self._settimefrominternet_last == None \
-               or (rtcdt[4] >= 2 and self._settimefrominternet_last[2] != rtcdt[2]):
-                print(self._settimefrominternet_last, rtcdt)
+            if self._time_sync_last == None \
+               or (rtcdt[4] >= 2 and self._time_sync_last[2] != rtcdt[2]):
+                print(self._time_sync_last, rtcdt)
                 self.wificonnect()
-                self.settimefrominternet()
+                self.time_sync()
                 
             self.mode_clock()
 
