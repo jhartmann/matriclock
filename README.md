@@ -1,8 +1,8 @@
 # matriclock
 
 ## Overview
-matriclock is an alarm clock written in Micropython for Raspberry Pi Pico W.
-See video on [Youtube](https://youtu.be/pl6CCcmThhM)
+matriclock is an alarm clock written in Micropython for Raspberry Pi Pico W.  
+See video on [Youtube](https://youtu.be/pl6CCcmThhM).
 
 
 ## Features
@@ -17,14 +17,10 @@ See video on [Youtube](https://youtu.be/pl6CCcmThhM)
 
 
 ## Software prerequisites
- - Download and install recent Micropython firmware from (https://micropython.org/download/rp2-pico-w/)
- - Download MAX7219 driver (max7219.py) from mcauser on github from (https://github.com/mcauser/micropython-max7219)
+ - Download and install recent Micropython firmware from [micropython.org](https://micropython.org/download/rp2-pico-w/)
+ - Download max7219.py from mcauser on [github](https://github.com/mcauser/micropython-max7219)
  - Edit settings in config.py
  - Copy main.py, config.py, and max7219.py to your Raspberry Pi Pico in Bootloader mode
-
-
-## Remark: Wifi connection failing
-In my home WLAN network, the connection to wifi is established exactly every second time the clock is started (connected to the power supply). I don't know whether this bevahiour has to do with my network, my hardware, or with the micropython firmware.
 
 
 ## Parts
@@ -46,10 +42,10 @@ In my home WLAN network, the connection to wifi is established exactly every sec
 |           |10k        |28       |GND       |
 |Button bn1 |S0         |29       |GP22      |
 |           |S1         |36       |3V3(OUT)  |
-|           |10k        |28       |GND       |
+|           |10kΩ       |28       |GND       |
 |Button bn2 |S0         |32       |GP27      |
 |           |S1         |36       |3V3(OUT)  |
-|           |10k        |28       |GND       |
+|           |10kΩ       |28       |GND       |
 |Buzzer     |S          |34       |GP28      |
 |           |+          |36       |3V3(OUT)  |
 |           |-          |23       |GND       |
@@ -62,7 +58,13 @@ In my home WLAN network, the connection to wifi is established exactly every sec
 |           |VCC        |36       |3V3(OUT)  |
 |           |GND        |23       |GND       |
 
-Buttons: Connect S0 to GPIO, S1 to 3V3, and place 10KΩ pull-down resistors between GND and each GPIO.
-DHT22: Place a 10KΩ pull-up resistor between VCC and DATA of DHT22.
+Buttons: Connect S0 to GPIO, S1 to 3V3, and place 10kΩ pull-down resistors between GND and the corresponding GPIO pin.  
+DHT22: Place a 10kΩ pull-up resistor between VCC and DATA of DHT22.  
 
 
+## Operation
+
+Press bn1 to toggle between time display and standby mode.  
+Press bn0 to toggle between time display, date display, and temperature/humidity display.  
+Press bn2 to toggle alarm on/off during time display.  
+Alarm: Press bn1 for snooze mode, or press bn2 to stop the alarm.  
