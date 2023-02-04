@@ -14,7 +14,7 @@ class Button:  # ***************************************************************
 
     def __init__(self, id, handler):
 
-        self.pin = Pin(id, Pin.IN)
+        self.pin = Pin(id, Pin.IN, Pin.PULL_DOWN)
         self.pin.irq(trigger=machine.Pin.IRQ_RISING |
                      machine.Pin.IRQ_FALLING, handler=handler)
         self._id = id
@@ -206,7 +206,7 @@ class DisplayHandler:  # *******************************************************
             0x1818181818181e18,
             0x3f03060c1830331e,
             0x1e3330301c30331e,
-            0x303030303f333336,
+            0x303030303f333332,
             0x1e3330301f03033f,
             0x1e3333331f03331e,
             0x0c0c0c0c0c18303f,
@@ -737,7 +737,9 @@ class MatriClock:  # ***********************************************************
             self._hdisp.wheels_move_to([h1, h0, 1, m1, m0], show_alarm_enabled=True, show_time_sync_failed=True)
 
     def wificonnect(self):
+        print("wificonnect()...")
         self.wlan = network.WLAN(network.STA_IF)
+        self.wlan.active(False)
         self.wlan.active(True)
         self.wlan.ifconfig((settings.network_ipaddress,
                            settings.network_subnetmask,
@@ -754,10 +756,8 @@ class MatriClock:  # ***********************************************************
             passes += 1
             cont = not self.wlan.isconnected() and passes < 30
             print("WLAN: Waiting to connect, pass " + str(passes) +
-                  ": status=" + str(self.wlan.status()))
-            machine.idle()
-
-        print("WLAN: Connected, status=", self.wlan.status())
+                  ", status=" + str(self.wlan.status()) + ", isconnected()=" + str(self.wlan.isconnected()))
+            time.sleep(0.5)
 
     def time_sync(self):
         if not self._time_sync_running:
@@ -775,8 +775,7 @@ class MatriClock:  # ***********************************************************
                 response = None
                 try:
                     print("requesting time from URL " + self.url + "...")
-                    headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.110 Safari/537.36'}
-                    response = urequests.get(self.url, headers=headers)
+                    response = urequests.get(self.url)
                     response_text = response.text
                     print("response.status_code=", response.status_code)
                 except ValueError as e:
@@ -786,7 +785,7 @@ class MatriClock:  # ***********************************************************
                 except OSError as e:
                     print("OSError:", e)
                     response_text = ""
-                    
+
                 finally:
                     if response != None:
                         response.close()
@@ -926,32 +925,27 @@ class MatriClock:  # ***********************************************************
                 print("alarm = " + str(self.alh.alarm), ", button.id = " +
                       str(button.id) + ", mode = " + self.mode)
 
-                if self.alh.alarm and button.id == self.bn1 and self.mode == 'clock':
-                    self.action_snooze()
-                elif self.alh.alarm and button.id == self.bn1 and self.mode == 'standby':
-                    self.action_snooze()
-                elif self.alh.alarm and button.id == self.bn2 and self.mode == 'clock':
-                    self.action_alarm_off()
-                elif self.alh.alarm and button.id == self.bn2 and self.mode == 'standby':
-                    self.action_alarm_off()
-                elif not self.alh.alarm and button.id == self.bn0 and self.mode == 'clock':
-                    self.action_date()
-                elif not self.alh.alarm and button.id == self.bn0 and self.mode == 'date':
-                    self.action_temp()
-                elif not self.alh.alarm and button.id == self.bn0 and self.mode == 'standby':
-                    self.action_date()
-                elif not self.alh.alarm and button.id == self.bn0 and self.mode == 'temp':
-                    self.action_clock()
-                elif not self.alh.alarm and button.id == self.bn1 and self.mode == 'clock':
-                    self.action_standby()
-                elif not self.alh.alarm and button.id == self.bn1 and self.mode == 'date':
-                    self.action_standby()
-                elif not self.alh.alarm and button.id == self.bn1 and self.mode == 'standby':
-                    self.action_clock()
-                elif not self.alh.alarm and button.id == self.bn1 and self.mode == 'temp':
-                    self.action_standby()
-                elif not self.alh.alarm and button.id == self.bn2 and self.mode == 'clock':
-                    self.action_alarm_toggle()
+                if self.alh.alarm:
+                    if button.id == self.bn1 and self.mode in ('clock', 'standby', 'date', 'temp'):
+                        self.action_snooze()
+                    elif button.id == self.bn2 and self.mode in ('clock', 'standby'):
+                        self.action_alarm_off()
+                else:
+                    if button.id == self.bn0:
+                        if self.mode in ('clock', 'standby'):
+                            self.action_date()
+                        elif self.mode == 'date':
+                            self.action_temp()
+                        elif self.mode == 'temp':
+                            self.action_clock()
+                    elif button.id == self.bn1:
+                        if self.mode == 'standby':
+                            self.action_clock()
+                        elif self.mode in ('clock', 'date', 'temp'):
+                            self.action_standby()
+                    elif button.id == self.bn2:
+                        if self.mode == 'clock':
+                            self.action_alarm_toggle()
 
     def action_alarm_toggle(self):
         self.alarm_enabled = not self.alarm_enabled
@@ -978,5 +972,4 @@ class MatriClock:  # ***********************************************************
 
 # ---------------- Main program ----------------
 
-macl = MatriClock()
-macl.start()
+MatriClock().start()
