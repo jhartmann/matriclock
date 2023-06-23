@@ -6,30 +6,14 @@ class settings:
     # Alarm times have to be entered in 24-hour format, regardless of the timezone.
     # First day of week is Monday=0, last day of week is Sunday=6
     alarms = [
-        (0, 5,  0),
-        (1, 5,  0),
-        (2, 5, 40),
-        (3, 5,  0),
-        (4, 5, 40),
-        (5, 7,  0),
-        (6, 7,  0)]
+        (0, 5, 0),
+        (1, 6, 0),
+        (2, 6, 0),
+        (3, 5, 0),
+        (4, 6, 0)]
 
-    rotation = 'shortest'  # 'shortest', 'down' or 'up''
+    snooze_time_m = 10 # snooze time in minutes
 
-    wifi_ssid = 'MyWiFiSSID'
-    wifi_password = 'MyWiFiPassword'
-
-    # Please customize these values for your local network
-    network_ipaddress = '192.168.188.34' 
-    network_subnetmask = '255.255.255.0'
-    network_gateway = '192.168.188.1'
-    network_dnsserver = '192.168.188.1'
-
-    # Your local timezone.
-    # 'auto' (timezone is determined by public IP address), or a timezone like 'Europe/Berlin' or 'America/Los_Angeles'
-    # You can request a list of valid timezone values from http://worldtimeapi.org/api/timezone
-    timezone = 'Europe/Berlin'
-    
     # This is a list of the approximate sunrise and sunset hour
     # from January to December for setting up the brightness value.
     # It is always an 24-hour clock value, regardless of the timezone.
@@ -49,20 +33,34 @@ class settings:
             (7, 17),
             (8, 16))
 
-    brightness_day = 2  # 0 (darkest) to 15 (brightest)
+    brightness_day = 15  # 0 (darkest) to 15 (brightest)
     brightness_night = 0  # 0 to 15
 
-    leading_zero = False # leading zero for time display
+    rotation = 'down'  # 'shortest', 'down' or 'up''
+    order = -1  # = -1: "4" is above "3"    1: "4" is below "3"
 
-    snooze_time_m = 10 # snooze time in minutes
+    leading_zero = False # leading zero for time display, e.g. "04:59" (True) / " 4:59" (False)
 
     display_inverse = False
 
-    language = 'de'  # 'de' or 'en' for displaying the day of week
 
-    order = -1  # = -1: "4" is above "3"    1: "4" is below "3"
+    # Your local timezone.
+    # 'auto' (timezone is determined by public IP address), or a timezone like 'Europe/Berlin' or 'America/Los_Angeles'
+    # You can request a list of valid timezone values from http://worldtimeapi.org/api/timezone
+    timezone = 'Europe/Berlin'
+    time_convention_hours = 24  # 12 for 12-hour clock, or 24 for 24-hour clock
+
+    language = 'de'  # 'de' or 'en' for displaying the day of week
     
-    time_convention_hours = 24 # 12 for 12-hour clock, or 24 for 24-hour clock
-    
-    temperature_unit = 'C' # 'C' for degrees Celsius, or 'F' for degrees Fahrenheit
+    use_dht_sensor = True  # Set to True to use DHT sensor and show temperature/humidity
+    temperature_unit = 'F' # 'C' for degrees Celsius, or 'F' for degrees Fahrenheit
+
+    wifi_ssid = 'MyWifiSSID'
+    wifi_password = 'MyWifiPassword'
+
+    # Please customize these values for your local network
+    network_ipaddress = '192.168.188.34' 
+    network_subnetmask = '255.255.255.0'
+    network_gateway = '192.168.188.1'
+    network_dnsserver = '9.9.9.9'
 

@@ -653,11 +653,10 @@ class MatriClock:  # ***********************************************************
             print("temperature=" + str(self._dht22.temperature()))
             print("humidity=" + str(self._dht22.humidity()))
 
-            temp_celsius = int(self.my_round(self._dht22.temperature(), 0))
             if settings.temperature_unit == 'C':
-                temp = temp_celsius
+                temp = int(self.my_round(self._dht22.temperature(), 0))
             elif settings.temperature_unit == 'F':
-                temp = temp_celsius * 1.8 + 32
+                temp = int(self.my_round(self._dht22.temperature() * 1.8 + 32, 0))
             
             if temp > 99:
                 temp = 99
@@ -934,9 +933,9 @@ class MatriClock:  # ***********************************************************
                     if button.id == self.bn0:
                         if self.mode in ('clock', 'standby'):
                             self.action_date()
-                        elif self.mode == 'date':
+                        elif self.mode == 'date' and settings.use_dht_sensor:
                             self.action_temp()
-                        elif self.mode == 'temp':
+                        elif self.mode == 'temp' or (self.mode == 'date' and not settings.use_dht_sensor):
                             self.action_clock()
                     elif button.id == self.bn1:
                         if self.mode == 'standby':
