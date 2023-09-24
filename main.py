@@ -177,6 +177,8 @@ class DisplayHandler:  # *******************************************************
         self.disp = max7219.Matrix8x8(spi, cs, 4)
         self.disp.brightness(0)
 
+        self._playing = False
+
         if settings.display_inverse:
             self.fg_col = 0
             self.bg_col = 1
@@ -265,29 +267,30 @@ class DisplayHandler:  # *******************************************************
                   char_matrix=self._char_matrix_digits, order=settings.order)
         )
 
-        self.wheel_count = len(self.wheels)
+        self.index_count = len(self.wheels)
 
     def wheels_move_to(self, chars, show_alarm_enabled, show_time_sync_failed):
         self._show_alarm_enabled = show_alarm_enabled
         self._show_time_sync_failed = show_time_sync_failed
         print("wheels_move_to", chars)
 
-        # Move digit wheels 0-3:
-        for dpos in range(0, self.wheel_count):
-            self.wheels[dpos].frame_move_to(chars[dpos])
+        # Create motion frames for digit wheels 0-3:
+        for index in range(0, self.index_count):
+            self.wheels[index].frame_move_to(chars[index])
 
-        self.play()
+        # Play frames, just like a short movie       
+        self.frames_play()
 
-    def play(self):
-        motion = True
-        while motion:
-            motion = False
+    def frames_play(self):
+        self._playing = True
+        while self._playing:
             self.clear()
             self.draw_info()
             self.draw_time_sync_failed()
 
-            for dpos in range(0, self.wheel_count):
-                motion = self.wheels[dpos].draw_next() or motion
+            self._playing = False
+            for index in range(0, self.index_count):
+                self._playing = self.wheels[index].draw_next() or self._playing
 
             self.show()
             time.sleep(self._row_seconds)
@@ -305,8 +308,8 @@ class DisplayHandler:  # *******************************************************
         self.clear()
         self.draw_info()
         self.draw_time_sync_failed()
-        for dpos in range(0, self.wheel_count):
-            self.wheels[dpos].refresh()
+        for index in range(0, self.index_count):
+            self.wheels[index].refresh()
         self.show()
 
     def draw_character(self, chr, x):
@@ -334,6 +337,12 @@ class DisplayHandler:  # *******************************************************
 
     brightness = property(_get_brightness, _set_brightness)
 
+
+    def _get_playing(self):
+        return self._playing
+    
+    playing = property(_get_playing)
+    
     def set_brightness_from_time(self, rtcdt):
         month = rtcdt[1]
         hour = rtcdt[4]
@@ -404,10 +413,10 @@ class wheel:
         self.frames_reset()
         self.build()
 
-    def get_dpos(self):
+    def get_index(self):
         return self._hdisp.wheels.index(self)
 
-    dpos = property(get_dpos)
+    index = property(get_index)
 
     def get_x(self):
         return self._x
@@ -455,7 +464,7 @@ class wheel:
 
         if not chr_current == char and char_row_current == 0:
 
-            for pos in range(0, (4-self.dpos)*12):  # 4 = 5 Wheels -> 0-based
+            for pos in range(0, (4-self.index)*12):  # 4 = 5 Wheels -> 0-based
                 self.frame_add(0)
 
             for sign in self._start_pattern:
@@ -914,7 +923,7 @@ class MatriClock:  # ***********************************************************
                 self.mode_temp()  # refresh temperature and humidity display
 
     def bn_hdl(self, pin):
-        if self.buttons_enabled:
+        if self.buttons_enabled and not self._hdisp.playing:
 
             button = self._get_button(pin)
             button.register_value()
