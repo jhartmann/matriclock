@@ -13,6 +13,7 @@ class settings:
         (4, 6, 0)]
 
     snooze_time_m = 10 # snooze time in minutes
+    alarm_auto_stop_m = 1 # alarm will stop when no key is pressed for this time (minutes)
 
     # This is a list of the approximate sunrise and sunset hour
     # from January to December for setting up the brightness value.

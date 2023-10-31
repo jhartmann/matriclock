@@ -1,3 +1,4 @@
+
 from machine import PWM, Pin, SPI, Timer
 import time
 import math
@@ -97,11 +98,17 @@ class AlarmHandler:  # *********************************************************
         self._snooze_alarm_ticks_ms = 0  # = disabled
         self.set_alarm_next_rtcdt()
 
-    def get_alarm(self):
-        # Alarm or snooze time is reached
+    def get_alarm_reached(self):
+        # Returns True if alarm or snooze time is reached
         return time.ticks_ms() > self._snooze_alarm_ticks_ms > 0
 
-    alarm = property(get_alarm)
+    alarm_reached = property(get_alarm_reached)
+
+    def get_alarm_auto_stop_reached(self):
+        # Returns True if alarm or snooze time is reached
+        return time.ticks_ms() > self._snooze_alarm_ticks_ms + 60000 * settings.alarm_auto_stop_m > 0
+
+    alarm_auto_stop_reached = property(get_alarm_auto_stop_reached)
 
     def _get_enabled(self):
         return self._enabled
@@ -893,9 +900,12 @@ class MatriClock:  # ***********************************************************
             sleep_seconds = 60 + sleep_seconds
         print("sleeping for " + str(sleep_seconds) + " seconds...")
         for secs in range(0, sleep_seconds):
-            if self.alh.alarm:
-                self.beep4x()
-                time.sleep(0.4)
+            if self.alh.alarm_reached:
+                if self.alh.alarm_auto_stop_reached:
+                    self.alh.snooze_stop()
+                else:
+                    self.beep4x()
+                    time.sleep(0.4)
             else:
                 time.sleep(1)
 
@@ -930,14 +940,14 @@ class MatriClock:  # ***********************************************************
 
             if button.value_changed() and button.value():
                 self.beep(0.001)
-                print("alarm = " + str(self.alh.alarm), ", button.id = " +
+                print("alarm = " + str(self.alh.alarm_reached), ", button.id = " +
                       str(button.id) + ", mode = " + self.mode)
 
-                if self.alh.alarm:
+                if self.alh.alarm_reached:
                     if button.id == self.bn1 and self.mode in ('clock', 'standby', 'date', 'temp'):
-                        self.action_snooze()
+                        self.alh.snooze_next()
                     elif button.id == self.bn2 and self.mode in ('clock', 'standby'):
-                        self.action_alarm_off()
+                        self.alh.snooze_stop()
                 else:
                     if button.id == self.bn0:
                         if self.mode in ('clock', 'standby'):
@@ -958,12 +968,6 @@ class MatriClock:  # ***********************************************************
     def action_alarm_toggle(self):
         self.alarm_enabled = not self.alarm_enabled
         self._hdisp.refresh()
-
-    def action_snooze(self):
-        self.alh.snooze_next()
-
-    def action_alarm_off(self):
-        self.alh.snooze_stop()
 
     def action_clock(self):
         self.mode = 'clock'
