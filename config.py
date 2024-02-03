@@ -1,4 +1,4 @@
-class settings:
+class Settings:
 
     # You can specify daily alarm times here.
     # Format: (day_of_week, hour, minute)
