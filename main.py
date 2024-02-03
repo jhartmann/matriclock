@@ -52,7 +52,6 @@ class MatriClock:  # ***********************************************************
 
         self._buttons = tuple(buttons)
 
-        # Adresse welche uns das JSON mit den Zeitdaten liefert
         self.service = 'http://worldtimeapi.org/api/'
         if Settings.timezone == 'auto':
             self.url = self.service + 'ip'
@@ -224,10 +223,12 @@ class MatriClock:  # ***********************************************************
         self.wlan = network.WLAN(network.STA_IF)
         self.wlan.active(False)
         self.wlan.active(True)
-        self.wlan.ifconfig((Settings.network_ipaddress,
-                           Settings.network_subnetmask,
-                           Settings.network_gateway,
-                           Settings.network_dnsserver))
+        
+        if not Settings.network_use_dhcp:
+            self.wlan.ifconfig((Settings.network_ipaddress,
+                Settings.network_subnetmask,
+                Settings.network_gateway,
+                Settings.network_dnsserver))
 
         self.wlan.connect(Settings.wifi_ssid, Settings.wifi_password)
 

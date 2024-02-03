@@ -59,9 +59,11 @@ class Settings:
     wifi_ssid = 'MyWifiSSID'
     wifi_password = 'MyWifiPassword'
 
-    # Please customize these values for your local network
-    network_ipaddress = '192.168.188.34' 
-    network_subnetmask = '255.255.255.0'
-    network_gateway = '192.168.188.1'
-    network_dnsserver = '9.9.9.9'
+    network_use_dhcp = True
+    
+    # if network_use_dhcp is set to False, then you have to setup the network manually:
+    # network_ipaddress = '192.168.188.34' 
+    # network_subnetmask = '255.255.255.0'
+    # network_gateway = '192.168.188.1'
+    # network_dnsserver = '9.9.9.9'
 
