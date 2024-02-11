@@ -12,16 +12,16 @@ See video on [Youtube](https://youtu.be/pl6CCcmThhM).
  - Alarm on/off
  - Snooze function
  - Displaying day of week and day of month
- - Displaying temperature (°C or °F) and relative humidity
+ - Displaying temperature (°C or °F) and relative humidity (optional)
  - Display off / standby mode
 
 
 ## Software prerequisites and installation
  - Download and install recent Micropython firmware from [micropython.org](https://micropython.org/download/rp2-pico-w/)
- - Download max7219.py from mcauser on [github](https://github.com/mcauser/micropython-max7219)
- - Customise config.py to your needs
+ - Download `max7219.py` from mcauser on [github](https://github.com/mcauser/micropython-max7219)
+ - Customise `config.py` to your needs
  - Set your Raspberry Pi Pico W to Bootloader mode
- - Copy all Python files of this project and max7219.py to it
+ - Copy all Python files of this project and `max7219.py` to it
 
 
 ## Parts
@@ -30,7 +30,7 @@ See video on [Youtube](https://youtu.be/pl6CCcmThhM).
 |1    |Raspberry Pi Pico WH Microcontroller           |
 |1    |8x32 LED Matrix Display MAX7219                |
 |3    |Buttons                                        |
-|1    |DHT-22 Sensor                                  |
+|1    |DHT-22 Sensor (optional)                       |
 |4    |Resistors 10k (3 pull-down for the buttons, 1 pull-up for the DHT-22 sensor)|
 |1    |Piezo buzzer, active                           |
 
@@ -62,6 +62,7 @@ See video on [Youtube](https://youtu.be/pl6CCcmThhM).
 Buttons: Connect S0 to GPIO, S1 to 3V3, and place 10kΩ pull-down resistors between GND and the corresponding GPIO pin.  
 DHT22: Place a 10kΩ pull-up resistor between VCC and DATA of DHT22.  
 
+You can leave out the DHT22 sensor if you don't need the temperature/humidity display. Please also set `use_dht_sensor = False` in this case.
 
 ## Operation
 
