@@ -16,11 +16,12 @@ See video on [Youtube](https://youtu.be/pl6CCcmThhM).
  - Display off / standby mode
 
 
-## Software prerequisites
+## Software prerequisites and installation
  - Download and install recent Micropython firmware from [micropython.org](https://micropython.org/download/rp2-pico-w/)
  - Download max7219.py from mcauser on [github](https://github.com/mcauser/micropython-max7219)
- - Edit settings in config.py
- - Copy main.py, config.py, and max7219.py to your Raspberry Pi Pico in Bootloader mode
+ - Customise config.py to your needs
+ - Set your Raspberry Pi Pico W to Bootloader mode
+ - Copy all Python files of this project and max7219.py to it
 
 
 ## Parts
