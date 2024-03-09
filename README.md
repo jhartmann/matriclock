@@ -3,7 +3,7 @@
 
 ## Overview
 matriclock is an alarm clock written in Micropython for Raspberry Pi Pico W.  
-See video on [Youtube](https://youtu.be/pl6CCcmThhM).
+See video on [Youtube](https://youtu.be/ngEsFX9NxQA).
 
 ## Features
  - Time synchronization via [worldtimeapi.org](https://worldtimeapi.org)
