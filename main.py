@@ -287,7 +287,6 @@ class MatriClock:  # ***********************************************************
                 print(self._timesync.synced_last_rtcdt, rtcdt)
                 self.wificonnect()
                 self._timesync.time_sync()
-                self.beepnum(2)
                 self._hdisp.time_sync_failed = not self._timesync.synced
                 self.alh.set_alarm_next_rtcdt()
                 
