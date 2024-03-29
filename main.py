@@ -2,10 +2,8 @@
 from machine import PWM, Pin, Timer
 import time
 import math
-import json
 import network
 import sys
-import urequests
 import micropython
 from dht import DHT22
 
@@ -14,6 +12,7 @@ from config import Settings
 from debounce import Button
 from alarmhandler import AlarmHandler
 from display import DisplayHandler, Wheel
+from timesync import TimeSync
 
 class MatriClock:  # *****************************************************************************************************************
 
@@ -21,13 +20,10 @@ class MatriClock:  # ***********************************************************
 
         self._hdisp = DisplayHandler()
         self._dht22 = DHT22(Pin(14, Pin.IN, Pin.PULL_UP))
-
-        self._time_sync_running = False
         self.rtc = machine.RTC()
+        self._timesync = TimeSync(self.rtc)
+        
         self.rtc.datetime((2022, 1, 1, 6, 12, 0, 0, 0))
-
-        self._rtcdt_last_set = None
-        self._time_synced = False
 
         self.bn0 = 21  # left
         self.bn1 = 22  # middle
@@ -42,7 +38,6 @@ class MatriClock:  # ***********************************************************
 
         self._mode = 'None'
         self._mode_before = 'None'
-        self._time_sync_last = None
 
         self.abuzzer = Pin(28, Pin.OUT)
 
@@ -51,12 +46,6 @@ class MatriClock:  # ***********************************************************
             buttons.append(Button(id, self.bn_hdl))
 
         self._buttons = tuple(buttons)
-
-        self.service = 'http://worldtimeapi.org/api/'
-        if Settings.timezone == 'auto':
-            self.url = self.service + 'ip'
-        else:
-            self.url = self.service + 'timezone/' + Settings.timezone
 
         if Settings.language == 'de':
             self._weekday_chars = (
@@ -91,10 +80,6 @@ class MatriClock:  # ***********************************************************
         return part / (10 ** ndigits) if ndigits >= 0 else part * 10 ** abs(ndigits)
 
     # Extract JSON from HTTP response:
-
-    def findJson(self, response_text):
-        txt = 'abbreviation'
-        return response_text[response_text.find(txt)-2:]
 
     def _set_mode(self, value):
         if value != self._mode:
@@ -159,15 +144,6 @@ class MatriClock:  # ***********************************************************
 
             chars = [t1, t0, 2, h1, h0]
             self._hdisp.wheels_move_to(chars, show_alarm_enabled=False, show_time_sync_failed=False)
-
-    def get_time_synced(self):
-        return self._time_synced
-    
-    def set_time_synced(self, value):
-        self._time_synced = value
-        self._hdisp.time_sync_failed = not value
-
-    time_synced = property(get_time_synced, set_time_synced)
 
     def mode_date(self):
         if self.mode == 'date':
@@ -243,91 +219,13 @@ class MatriClock:  # ***********************************************************
                   ", status=" + str(self.wlan.status()) + ", isconnected()=" + str(self.wlan.isconnected()))
             time.sleep(0.5)
 
-    def time_sync(self):
-        if not self._time_sync_running:
-            self._time_sync_running = True
-            self.time_synced = False
-            print('time_sync()')
-
-            # Reading HTTP Response
-            passes = 0
-            response_text = ""
-
-            repeat = True
-
-            while repeat:
-                response = None
-                try:
-                    print("requesting time from URL " + self.url + "...")
-                    response = urequests.get(self.url)
-                    response_text = response.text
-                    print("response.status_code=", response.status_code)
-                except ValueError as e:
-                    print("ValueError:", e)
-                    response_text = ""
-
-                except OSError as e:
-                    print("OSError:", e)
-                    response_text = ""
-
-                finally:
-                    if response != None:
-                        response.close()
-                        print("response closed.")
-
-                if response_text == "":
-                    time.sleep(1)
-                passes += 1
-
-                repeat = (response_text == "" and passes < 30)
-                
-            if len(response_text) > 0:
-                jsonData = self.findJson(response_text)
-                aDict = json.loads(jsonData)
-
-                day_of_week = aDict['day_of_week']
-                dtstring = aDict['datetime']
-
-                # Internet time: Sunday=0, Saturday=6
-                # RTC time:      Monday=0, Sunday=6
-                if day_of_week == 6:
-                    day_of_week = 0
-                else:
-                    day_of_week -= 1
-
-                # e.g. 2022-10-07T19:03:33.054288 + 02:00
-                year = int(dtstring[0:4])
-                month = int(dtstring[5:7])
-                day = int(dtstring[8:10])
-                hours = int(dtstring[11:13])
-
-                # the time format of worldtimeapi.org is 24-hour clock for any country
-                if Settings.time_convention_hours == 12:
-                    hours = hours % 12
-                    
-                minutes = int(dtstring[14:16])
-                seconds = int(dtstring[17:19])
-                subseconds = 0
-
-                rtcdt = (year, month, day, day_of_week,
-                         hours, minutes, seconds, subseconds)
-                self.rtc.datetime(rtcdt)
-                self.time_synced = True
-                self._time_sync_last = rtcdt
-                print("rtcdt, now, last=", rtcdt, self.rtc.datetime(),
-                      self._time_sync_last)
-                self.alh.set_alarm_next_rtcdt()
-
-            time.sleep(1)
-            self._time_sync_running = False
-
     def beep(self, duration_s):
         self.abuzzer.value(1)
         time.sleep(duration_s)
         self.abuzzer.value(0)
 
-    def beep4x(self):
-        for nr in range(0, 4):
+    def beepnum(self, count):
+        for nr in range(0, count):
             self.beep(0.03)
             time.sleep(0.15)
 
@@ -373,7 +271,7 @@ class MatriClock:  # ***********************************************************
                 if self.alh.alarm_auto_stop_reached:
                     self.alh.snooze_stop()
                 else:
-                    self.beep4x()
+                    self.beepnum(4)
                     time.sleep(0.4)
             else:
                 time.sleep(1)
@@ -384,11 +282,14 @@ class MatriClock:  # ***********************************************************
             print("minute_loop at " +
                   str(rtcdt[4]) + ":" + str(rtcdt[5]) + ":" + str(rtcdt[6]))
             # Sync time if it hasn't been synced before or if it is after 2 a.m. and the last sync is a day ago:
-            if self._time_sync_last == None \
-               or (rtcdt[4] >= 2 and self._time_sync_last[2] != rtcdt[2]):
-                print(self._time_sync_last, rtcdt)
+            if self._timesync.synced_last_rtcdt == None \
+               or (rtcdt[4] >= 2 and self._timesync.synced_last_rtcdt[2] != rtcdt[2]):
+                print(self._timesync.synced_last_rtcdt, rtcdt)
                 self.wificonnect()
-                self.time_sync()
+                self._timesync.time_sync()
+                self.beepnum(2)
+                self._hdisp.time_sync_failed = not self._timesync.synced
+                self.alh.set_alarm_next_rtcdt()
                 
             self.mode_clock()
 
