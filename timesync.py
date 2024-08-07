@@ -59,7 +59,7 @@ class TimeSync:
                 repeat = (response_text == "" and passes < 30)
                 
             if len(response_text) > 0:
-                jsonData = self.findJson(response_text)
+                jsonData = response_text
                 aDict = json.loads(jsonData)
 
                 day_of_week = aDict['day_of_week']
@@ -98,7 +98,7 @@ class TimeSync:
             self._time_sync_running = False
 
     def findJson(self, response_text):
-        txt = 'abbreviation'
+        txt = 'utc_offset'
         return response_text[response_text.find(txt)-2:]
 
     def get_synced(self):
@@ -110,3 +110,15 @@ class TimeSync:
         return self._synced_last_rtcdt
     
     synced_last_rtcdt = property(get_synced_last_rtcdt)
+    
+    def get_necessary(self):
+        # time sync is necessary if
+        # time has never been synced before
+        # the last time sync wasn't today and it is 3.01 a.m. or later
+        # this considers the time change from/to daylight saving time 
+        rtcdt = self._rtc.datetime()
+        return self._synced_last_rtcdt == None \
+           or (rtcdt[4] >= 3 and rtcdt[5] >= 1 and self._synced_last_rtcdt[2] != rtcdt[2])
+
+    necessary = property(get_necessary)
+    

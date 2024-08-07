@@ -282,8 +282,7 @@ class MatriClock:  # ***********************************************************
             print("minute_loop at " +
                   str(rtcdt[4]) + ":" + str(rtcdt[5]) + ":" + str(rtcdt[6]))
             # Sync time if it hasn't been synced before or if it is after 2 a.m. and the last sync is a day ago:
-            if self._timesync.synced_last_rtcdt == None \
-               or (rtcdt[4] >= 2 and self._timesync.synced_last_rtcdt[2] != rtcdt[2]):
+            if self._timesync.necessary:
                 print(self._timesync.synced_last_rtcdt, rtcdt)
                 self.wificonnect()
                 self._timesync.time_sync()
