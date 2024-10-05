@@ -48,16 +48,16 @@ class Settings:
     # Your local timezone.
     # 'auto' (timezone is determined by public IP address), or a timezone like 'Europe/Berlin' or 'America/Los_Angeles'
     # You can request a list of valid timezone values from http://worldtimeapi.org/api/timezone
-    timezone = 'Europe/Berlin'
+    timezone = 'auto'
     time_convention_hours = 24  # 12 for 12-hour clock, or 24 for 24-hour clock
 
     language = 'de'  # 'de' or 'en' for displaying the day of week
     
-    use_dht_sensor = True  # Set to True to use DHT sensor and show temperature/humidity
-    temperature_unit = 'F' # 'C' for degrees Celsius, or 'F' for degrees Fahrenheit
+    use_dht_sensor = False  # Set to True to use DHT sensor and show temperature/humidity
+    temperature_unit = 'C' # 'C' for degrees Celsius, or 'F' for degrees Fahrenheit
 
-    wifi_ssid = 'MyWifiSSID'
-    wifi_password = 'MyWifiPassword'
+    wifi_ssid = 'MyWiFiSSID'
+    wifi_password = 'MyWiFiPassword'
 
     network_use_dhcp = True
     
@@ -66,4 +66,5 @@ class Settings:
     # network_subnetmask = '255.255.255.0'
     # network_gateway = '192.168.188.1'
     # network_dnsserver = '9.9.9.9'
+
 
